@@ -20,7 +20,7 @@ Station = Base.classes.station
 # Flask Setup
 app = Flask(__name__)
 
-session = Session(engine)
+
 
 @app.route("/")
 def welcome():
@@ -38,10 +38,12 @@ def welcome():
 @app.route("/api/v1.0/precipitation")
 def precipitation():
 
+    session = Session(engine)
     """Return a list of precipitation data with dates"""
     # Query all precipitation
     results = session.query(Measurement.date, Measurement.prcp).all()
 
+    session.close()
     # Create a dictionary from the row data and append to a list of all_precipitation
     all_precipitation = []
     for date, precipitation in results:
@@ -55,11 +57,12 @@ def precipitation():
 
 @app.route("/api/v1.0/stations")
 def stations():
-  
+    session = Session(engine)
     """Return a list of all station names"""
     # Query all stations
     results = session.query(Station.station).all()
 
+    session.close()
     # Convert list of tuples into normal list
     all_stations = list(np.ravel(results))
 
@@ -69,42 +72,60 @@ def stations():
 @app.route("/api/v1.0/tobs")
 def tobs():
 
+    session = Session(engine)
     """Return a list of dates and tobs for most active station"""
     # Query all tobs
     last_year = dt.date(2017, 8, 23) - dt.timedelta(days=365)
     results = session.query(Measurement.tobs).filter(Measurement.station == "USC00519281").filter(Measurement.date >= last_year).all()
 
+    session.close()
 
     # Convert list of tuples into normal list
     all_tobs = list(np.ravel(results))
 
     return jsonify(all_tobs)
 
+
 @app.route("/api/v1.0/<start>")
-@app.route("/api/v1.0/temp/<start>/<end>")
+@app.route("/api/v1.0/temp/start/end")
+def date(start = None, end = None):
 
-def start():
+    #variables
+    start_date = start
+    end_date = end
 
-    # Query all tobs
+    session = Session(engine)
 
-    # Convert list of tuples into normal list
+    #query for date & precipitation
+    if end_date == None:
+        maxTemp = session.query(func.max(Measurement.tobs)).\
+            filter(Measurement.date >= start_date).scalar()
+        minTemp = session.query(func.min(Measurement.tobs)).\
+            filter(Measurement.date >= start_date).scalar()
+        avgTemp = session.query(func.avg(Measurement.tobs)).\
+            filter(Measurement.date >= start_date).scalar()
+    else:
+        maxTemp = session.query(func.max(Measurement.tobs)).\
+            filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
+        minTemp = session.query(func.min(Measurement.tobs)).\
+            filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
+        avgTemp = session.query(func.avg(Measurement.tobs)).\
+            filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
 
-    return jsonify()
+    #dictionary
+    weather_date = []
+    weather_dict = {}
+    weather_dict["Start_Date"] = start_date
+    weather_dict["End_Date"] = end_date
+    weather_dict["Avg_Temp"] = round(avgTemp,2)
+    weather_dict["Max_Temp"] = maxTemp
+    weather_dict["Min_Date"] = minTemp
+    weather_date.append(weather_dict)
 
-# @app.route("/api/v1.0/<start>/<end>")
-# def names():
-#     # Create session (link) from Python to the DB
-#     session = Session(engine)
+    return jsonify(weather_date)
 
-#     # Query all tobs
-
-#     session.close()
-
-#     # Convert list of tuples into normal list
-
-#     return jsonify()
-
-#session.close()
+    session.close()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
