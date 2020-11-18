@@ -31,7 +31,7 @@ def welcome():
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"/api/v1.0/start<br/>"
-        f"/api/v1.0/temp/start/end"
+        f"/api/v1.0/<start>/<end>"
     )
 
 
@@ -86,39 +86,57 @@ def tobs():
     return jsonify(all_tobs)
 
 
-@app.route("/api/v1.0/<start>")
-@app.route("/api/v1.0/temp/start/end")
-def date(start = None, end = None):
-
-    #variables
-    start_date = start
-    end_date = end
+#Define function for querying based on start date. Return TMAX, TMIN, and TAVG
+def start_temp(start_date):
 
     session = Session(engine)
 
-    #query for date & precipitation
-    if end_date == None:
-        maxTemp = session.query(func.max(Measurement.tobs)).filter(Measurement.date >= start_date).scalar()
-        minTemp = session.query(func.min(Measurement.tobs)).filter(Measurement.date >= start_date).scalar()
-        avgTemp = session.query(func.avg(Measurement.tobs)).filter(Measurement.date >= start_date).scalar()
-    else:
-        maxTemp = session.query(func.max(Measurement.tobs)).filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
-        minTemp = session.query(func.min(Measurement.tobs)).filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
-        avgTemp = session.query(func.avg(Measurement.tobs)).filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
-
-    #dictionary
-    weather_date = []
-    weather_dict = {}
-    weather_dict["Start Date"] = start_date
-    weather_dict["End Date"] = end_date
-    weather_dict["Max Temp"] = maxTemp
-    weather_dict["Min Date"] = minTemp
-    weather_dict["Avg Temp"] = avgTemp
-    weather_date.append(weather_dict)
-
-    return jsonify(weather_date)
+    return session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).\
+        filter(Measurement.date >= start_date).all()
 
     session.close()
+
+#Set app route and create dictionary and jsonify response
+@app.route("/api/v1.0/<start>")
+def start_date(start):
+    starting_temp = start_temp(start)
+    temps = list(np.ravel(starting_temp))
+    
+    temp_min = temps[0]
+    temp_avg = temps[1]
+    temp_max = temps[2]
+    temp_dict = {'Min Temp': temp_min, 'Max Temp': temp_max, 'Avg Temp': temp_avg, 'Start Date': start}
+
+    return jsonify(temp_dict)
+
+
+#Define function for querying based on start and end date. Return TMIN, TMAX, and TAVG
+def temps(start_date, end_date):
+    session = Session(engine)
+
+    return session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).\
+        filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all()
+
+    session.close()
+#Set app route and create dictionary and jsonify response
+@app.route("/api/v1.0/<start>/<end>")
+#@app.route("/api/v1.0/<2016-08-23>/<2017-08-23>")
+def start_end(start, end):
+    start_end_temp = temps(start, end)
+    all_temp = list(np.ravel(start_end_temp))
+
+    min_temp = all_temp[0]
+    max_temp = all_temp[1]
+    avg_temp = all_temp[2]
+    
+    all_temp_dict = {'Min Temp': min_temp, 
+                    'Max Temp': max_temp, 
+                    'Avg Temp': avg_temp, 
+                    'Start Date': start, 
+                    'End Date': end}
+
+    return jsonify(all_temp_dict)
+
 
 
 if __name__ == "__main__":
