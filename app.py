@@ -98,34 +98,52 @@ def date(start = None, end = None):
 
     #query for date & precipitation
     if end_date == None:
-        maxTemp = session.query(func.max(Measurement.tobs)).\
-            filter(Measurement.date >= start_date).scalar()
-        minTemp = session.query(func.min(Measurement.tobs)).\
-            filter(Measurement.date >= start_date).scalar()
-        avgTemp = session.query(func.avg(Measurement.tobs)).\
-            filter(Measurement.date >= start_date).scalar()
+        maxTemp = session.query(func.max(Measurement.tobs)).filter(Measurement.date >= start_date).scalar()
+        minTemp = session.query(func.min(Measurement.tobs)).filter(Measurement.date >= start_date).scalar()
+        avgTemp = session.query(func.avg(Measurement.tobs)).filter(Measurement.date >= start_date).scalar()
     else:
-        maxTemp = session.query(func.max(Measurement.tobs)).\
-            filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
-        minTemp = session.query(func.min(Measurement.tobs)).\
-            filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
-        avgTemp = session.query(func.avg(Measurement.tobs)).\
-            filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
+        maxTemp = session.query(func.max(Measurement.tobs)).filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
+        minTemp = session.query(func.min(Measurement.tobs)).filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
+        avgTemp = session.query(func.avg(Measurement.tobs)).filter(Measurement.date >= start_date.filter(Measurement.date <= end_date)).scalar()
 
     #dictionary
     weather_date = []
     weather_dict = {}
-    weather_dict["Start_Date"] = start_date
-    weather_dict["End_Date"] = end_date
-    weather_dict["Avg_Temp"] = round(avgTemp,2)
-    weather_dict["Max_Temp"] = maxTemp
-    weather_dict["Min_Date"] = minTemp
+    weather_dict["Start Date"] = start_date
+    weather_dict["End Date"] = end_date
+    weather_dict["Max Temp"] = maxTemp
+    weather_dict["Min Date"] = minTemp
+    weather_dict["Avg Temp"] = avgTemp
     weather_date.append(weather_dict)
 
     return jsonify(weather_date)
 
     session.close()
 
+
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
