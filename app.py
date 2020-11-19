@@ -8,20 +8,22 @@ from sqlalchemy import create_engine, func, inspect
 from flask import Flask, jsonify
 
 
-# Database Setup
+# database Setup
 engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 # reflect an existing database into a new model
 Base = automap_base()
 # reflect the tables
 Base.prepare(engine, reflect=True)
-# Save reference to the table
+# save reference to the table
 Measurement = Base.classes.measurement
 Station = Base.classes.station
-# Flask Setup
+# flask setup
 app = Flask(__name__)
 
 
+#create routes
 
+#home page route
 @app.route("/")
 def welcome():
     """List all available api routes."""
@@ -34,7 +36,7 @@ def welcome():
         f"/api/v1.0/<start>/<end>"
     )
 
-
+#precipitation route
 @app.route("/api/v1.0/precipitation")
 def precipitation():
 
@@ -54,7 +56,7 @@ def precipitation():
 
     return jsonify(all_precipitation)
 
-
+#station route
 @app.route("/api/v1.0/stations")
 def stations():
     session = Session(engine)
@@ -68,7 +70,7 @@ def stations():
 
     return jsonify(all_stations)
 
-
+#temperature observations route
 @app.route("/api/v1.0/tobs")
 def tobs():
 
@@ -85,7 +87,7 @@ def tobs():
 
     return jsonify(all_tobs)
 
-
+#start and end date routes
 #Define function for querying based on start date. Return TMAX, TMIN, and TAVG
 def start_temp(start_date):
 
@@ -118,9 +120,9 @@ def temps(start_date, end_date):
         filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all()
 
     session.close()
+
 #Set app route and create dictionary and jsonify response
 @app.route("/api/v1.0/<start>/<end>")
-#@app.route("/api/v1.0/<2016-08-23>/<2017-08-23>")
 def start_end(start, end):
     start_end_temp = temps(start, end)
     all_temp = list(np.ravel(start_end_temp))
@@ -136,8 +138,6 @@ def start_end(start, end):
                     'End Date': end}
 
     return jsonify(all_temp_dict)
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)
